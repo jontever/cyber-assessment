@@ -218,37 +218,37 @@ body,
   .ga-header,
   .ga-phase-banner,
   .govuk-button,
-  .ga-no-print {
+  .ga-no-print,
+  .govuk-breadcrumbs,
+  .govuk-warning-text {
     display: none !important;
   }
-}
 
-/* ── Utility ── */
-.ga-caption {
-  font-size: 14px;
-  color: var(--govassure-dark-grey);
-}
+  body {
+    font-size: 11pt !important;
+    color: #000 !important;
+  }
 
-.ga-fw-bold {
-  font-weight: 700;
-}
+  .ga-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
 
-.ga-mt-0 { margin-top: 0; }
-.ga-mb-0 { margin-bottom: 0; }
+  .govuk-heading-xl { font-size: 20pt !important; }
+  .govuk-heading-l  { font-size: 15pt !important; }
+  .govuk-heading-m  { font-size: 13pt !important; }
 
-.ga-tag--achieved {
-  background: var(--govassure-green);
-  color: var(--govassure-white);
-}
-.ga-tag--partially_achieved {
-  background: #f47738;
-  color: var(--govassure-white);
-}
-.ga-tag--not_achieved {
-  background: var(--govassure-red);
-  color: var(--govassure-white);
-}
-.ga-tag--not_started {
-  background: var(--govassure-mid-grey);
-  color: var(--govassure-black);
-}
+  /* Score cards: force colour on print */
+  .govuk-table__cell,
+  .govuk-table__header {
+    font-size: 9pt !important;
+    padding: 4pt 6pt !important;
+  }
+
+  /* Avoid page breaks inside tables */
+  .ga-results-obj {
+    page-break-inside: avoid;
+  }
+
+  /* Print header in place of nav */
+  .g

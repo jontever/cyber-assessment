@@ -1,15 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import Layout from "../components/Layout";
-import { loadAssessment, saveAssessment, countResponded } from "../lib/storage";
+import { loadAssessment, countResponded } from "../lib/storage";
 import { CAF, ALL_IGPS, TOTAL_IGPS, SCORES } from "../data/caf";
-
-// ── Score summary per principle ──────────────────────────────────────────────
+import { generateWordDoc } from "../lib/wordExport";
 
 function PrincipleResultRow({ principle, responses, objectiveColour }) {
   const stats = { achieved: 0, partial: 0, notAchieved: 0, notStarted: 0 };
-
   principle.igps.forEach((igp) => {
     const r = responses[igp.id];
     if (!r?.score) stats.notStarted++;
@@ -17,9 +15,7 @@ function PrincipleResultRow({ principle, responses, objectiveColour }) {
     else if (r.score === "partially_achieved") stats.partial++;
     else stats.notAchieved++;
   });
-
   const total = principle.igps.length;
-
   return (
     <tr className="govuk-table__row">
       <td className="govuk-table__cell">
@@ -44,8 +40,6 @@ function PrincipleResultRow({ principle, responses, objectiveColour }) {
   );
 }
 
-// ── Detailed IGP list ─────────────────────────────────────────────────────────
-
 function IgpDetailTable({ igps, responses }) {
   return (
     <table className="govuk-table" style={{ fontSize: 14 }}>
@@ -64,25 +58,18 @@ function IgpDetailTable({ igps, responses }) {
           const scoreInfo = score ? SCORES[score] : null;
           return (
             <tr className="govuk-table__row" key={igp.id}>
-              <td className="govuk-table__cell">
-                <strong>{igp.code}</strong>
-              </td>
+              <td className="govuk-table__cell"><strong>{igp.code}</strong></td>
               <td className="govuk-table__cell">{igp.title}</td>
               <td className="govuk-table__cell">
                 {scoreInfo ? (
-                  <span
-                    className="ga-score-badge"
-                    style={{ background: scoreInfo.colour, fontSize: 12, padding: "2px 8px" }}
-                  >
+                  <span className="ga-score-badge" style={{ background: scoreInfo.colour, fontSize: 12, padding: "2px 8px" }}>
                     {scoreInfo.label}
                   </span>
                 ) : (
                   <span style={{ color: "#505a5f", fontSize: 12 }}>Not started</span>
                 )}
               </td>
-              <td className="govuk-table__cell" style={{ color: "#505a5f" }}>
-                {r?.notes || "—"}
-              </td>
+              <td className="govuk-table__cell" style={{ color: "#505a5f" }}>{r?.notes || "—"}</td>
             </tr>
           );
         })}
@@ -90,8 +77,6 @@ function IgpDetailTable({ igps, responses }) {
     </table>
   );
 }
-
-// ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -101,12 +86,18 @@ export default function ResultsPage() {
 
   useEffect(() => {
     const saved = loadAssessment();
-    if (!saved) {
-      router.push("/");
-      return;
-    }
+    if (!saved) { router.push("/"); return; }
     setAssessment(saved);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleWordExport() {
+    if (!assessment) return;
+    generateWordDoc(assessment);
+  }
+
+  function handlePrint() {
+    window.print();
+  }
 
   function handleExport() {
     if (!assessment) return;
@@ -114,9 +105,7 @@ export default function ResultsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     const orgSlug = (assessment.meta?.organisationName || "govassure")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
+      .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const dateSlug = assessment.meta?.assessmentDate || new Date().toISOString().slice(0, 10);
     a.href = url;
     a.download = `govassure-caf-${orgSlug}-${dateSlug}.json`;
@@ -130,12 +119,7 @@ export default function ResultsPage() {
 
   const { meta, responses } = assessment;
 
-  // Overall counts
-  let totalAchieved = 0,
-    totalPartial = 0,
-    totalNotAchieved = 0,
-    totalNotStarted = 0;
-
+  let totalAchieved = 0, totalPartial = 0, totalNotAchieved = 0, totalNotStarted = 0;
   ALL_IGPS.forEach((igp) => {
     const r = responses[igp.id];
     if (!r?.score) totalNotStarted++;
@@ -149,7 +133,6 @@ export default function ResultsPage() {
 
   return (
     <Layout title="Results">
-      {/* Breadcrumb */}
       <div className="govuk-breadcrumbs" style={{ marginBottom: 24 }}>
         <ol className="govuk-breadcrumbs__list">
           <li className="govuk-breadcrumbs__list-item">
@@ -162,23 +145,17 @@ export default function ResultsPage() {
         </ol>
       </div>
 
-      {/* Heading & meta */}
       <h1 className="govuk-heading-xl ga-mb-0">Assessment results</h1>
       <p className="govuk-body-l" style={{ marginBottom: 4 }}>
         {meta.organisationName || "Organisation not specified"}
       </p>
       {meta.assessorName && (
-        <p className="govuk-body ga-caption" style={{ marginBottom: 2 }}>
-          Assessor: {meta.assessorName}
-        </p>
+        <p className="govuk-body ga-caption" style={{ marginBottom: 2 }}>Assessor: {meta.assessorName}</p>
       )}
       {meta.assessmentDate && (
-        <p className="govuk-body ga-caption" style={{ marginBottom: 24 }}>
-          Date: {meta.assessmentDate}
-        </p>
+        <p className="govuk-body ga-caption" style={{ marginBottom: 24 }}>Date: {meta.assessmentDate}</p>
       )}
 
-      {/* Completion warning */}
       {totalNotStarted > 0 && (
         <div className="govuk-warning-text" style={{ marginBottom: 24 }}>
           <span className="govuk-warning-text__icon" aria-hidden="true">!</span>
@@ -190,99 +167,43 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* Score cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-          gap: 16,
-          marginBottom: 32,
-        }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 32 }}>
         {[
           { label: "Achieved", count: totalAchieved, colour: "#00703c", bg: "#cce2d8" },
           { label: "Partially achieved", count: totalPartial, colour: "#f47738", bg: "#fde4d1" },
           { label: "Not achieved", count: totalNotAchieved, colour: "#d4351c", bg: "#f6d7d2" },
           { label: "Not started", count: totalNotStarted, colour: "#505a5f", bg: "#f3f2f1" },
         ].map((item) => (
-          <div
-            key={item.label}
-            style={{
-              background: item.bg,
-              borderTop: `4px solid ${item.colour}`,
-              padding: "16px 20px",
-              borderRadius: 4,
-            }}
-          >
-            <p
-              style={{
-                fontSize: 36,
-                fontWeight: 700,
-                color: item.colour,
-                margin: "0 0 4px",
-                lineHeight: 1,
-              }}
-            >
-              {item.count}
-            </p>
-            <p style={{ margin: 0, fontSize: 14, color: "#0b0c0c" }}>{item.label}</p>
+          <div key={item.label} style={{ background: item.bg, borderRadius: 4, padding: "20px 16px", textAlign: "center" }}>
+            <div style={{ fontSize: 36, fontWeight: 700, color: item.colour }}>{item.count}</div>
+            <div style={{ fontSize: 13, color: item.colour, marginTop: 4 }}>{item.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Overall progress bar */}
-      <div style={{ marginBottom: 32 }}>
-        <p className="govuk-body-s ga-caption" style={{ marginBottom: 6 }}>
-          {completed} of {TOTAL_IGPS} IGPs assessed ({pct}%)
-        </p>
-        <div style={{ display: "flex", height: 16, borderRadius: 8, overflow: "hidden", background: "#f3f2f1" }}>
-          {totalAchieved > 0 && (
-            <div style={{ flex: totalAchieved, background: "#00703c" }} />
-          )}
-          {totalPartial > 0 && (
-            <div style={{ flex: totalPartial, background: "#f47738" }} />
-          )}
-          {totalNotAchieved > 0 && (
-            <div style={{ flex: totalNotAchieved, background: "#d4351c" }} />
-          )}
-          {totalNotStarted > 0 && (
-            <div style={{ flex: totalNotStarted, background: "#b1b4b6" }} />
-          )}
-        </div>
-        <div style={{ display: "flex", gap: 20, marginTop: 8, flexWrap: "wrap" }}>
-          {[
-            { label: "Achieved", colour: "#00703c" },
-            { label: "Partially achieved", colour: "#f47738" },
-            { label: "Not achieved", colour: "#d4351c" },
-            { label: "Not started", colour: "#b1b4b6" },
-          ].map((l) => (
-            <span key={l.label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-              <span style={{ width: 12, height: 12, borderRadius: 2, background: l.colour, display: "inline-block" }} />
-              {l.label}
-            </span>
-          ))}
-        </div>
+      <h2 className="govuk-heading-m">Completion</h2>
+      <div className="ga-progress" style={{ marginBottom: 8 }}>
+        <div className="ga-progress__fill" style={{ width: `${pct}%`, background: "#1d70b8" }} />
       </div>
+      <p className="govuk-body" style={{ marginBottom: 32 }}>
+        {completed} of {TOTAL_IGPS} IGPs assessed ({pct}% complete)
+      </p>
 
-      {/* Export actions */}
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 40 }}>
-        <button className="govuk-button" onClick={handleExport}>
-          {exported ? "✓ Exported!" : "Export as JSON"}
+      <div className="ga-no-print" style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 40 }}>
+        <button className="govuk-button govuk-button--secondary" onClick={handleWordExport}>
+          Export to Word
         </button>
-        <Link href="/assessment" className="govuk-button govuk-button--secondary">
-          Continue assessment
-        </Link>
+        <button className="govuk-button govuk-button--secondary" onClick={handlePrint}>
+          Print / Save as PDF
+        </button>
+        <button className="govuk-button govuk-button--secondary" onClick={handleExport}>
+          {exported ? "Saved!" : "Export JSON"}
+        </button>
       </div>
-
-      {/* Summary table */}
-      <h2 className="govuk-heading-l">Summary by principle</h2>
 
       {CAF.map((objective) => (
-        <div key={objective.id} className="ga-results-obj" style={{ marginBottom: 40 }}>
-          <div
-            className="ga-results-obj__header"
-            style={{ borderLeftColor: objective.colour }}
-          >
+        <div key={objective.id} className="ga-results-obj">
+          <div className="ga-results-obj__header" style={{ borderColor: objective.colour, color: objective.colour }}>
             Objective {objective.id}: {objective.title}
           </div>
           <table className="govuk-table">
@@ -292,57 +213,45 @@ export default function ResultsPage() {
                 <th className="govuk-table__header govuk-table__header--numeric" style={{ color: "#00703c" }}>Achieved</th>
                 <th className="govuk-table__header govuk-table__header--numeric" style={{ color: "#f47738" }}>Partial</th>
                 <th className="govuk-table__header govuk-table__header--numeric" style={{ color: "#d4351c" }}>Not achieved</th>
-                <th className="govuk-table__header govuk-table__header--numeric" style={{ color: "#505a5f" }}>Not started</th>
+                <th className="govuk-table__header govuk-table__header--numeric">Not started</th>
                 <th className="govuk-table__header govuk-table__header--numeric">Total</th>
               </tr>
             </thead>
             <tbody className="govuk-table__body">
-              {objective.principles.map((principle) => (
-                <PrincipleResultRow
-                  key={principle.id}
-                  principle={principle}
-                  responses={responses}
-                  objectiveColour={objective.colour}
-                />
+              {objective.principles.map((p) => (
+                <PrincipleResultRow key={p.id} principle={p} responses={responses} objectiveColour={objective.colour} />
               ))}
             </tbody>
           </table>
         </div>
       ))}
 
-      {/* Detailed IGP breakdown */}
-      <hr className="govuk-section-break govuk-section-break--m govuk-section-break--visible" />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <h2 className="govuk-heading-l ga-mb-0">Detailed IGP breakdown</h2>
-        <button
-          className="govuk-button govuk-button--secondary"
-          style={{ marginBottom: 0 }}
-          onClick={() => setShowDetail((v) => !v)}
-        >
-          {showDetail ? "Hide detail" : "Show detail"}
+      <div style={{ marginBottom: 32 }}>
+        <button className="govuk-button govuk-button--secondary ga-no-print" onClick={() => setShowDetail(!showDetail)}>
+          {showDetail ? "Hide" : "Show"} detailed IGP breakdown
         </button>
       </div>
 
-      {showDetail &&
-        CAF.map((objective) =>
-          objective.principles.map((principle) => (
-            <div key={principle.id} style={{ marginBottom: 32 }}>
-              <h3
-                className="govuk-heading-m"
-                style={{
-                  borderLeft: `4px solid ${objective.colour}`,
-                  paddingLeft: 12,
-                  marginBottom: 12,
-                }}
-              >
-                {principle.id} – {principle.title}
-              </h3>
-              <IgpDetailTable igps={principle.igps} responses={responses} />
+      {showDetail && (
+        <div>
+          {CAF.map((objective) => (
+            <div key={objective.id} className="ga-results-obj">
+              <div className="ga-results-obj__header" style={{ borderColor: objective.colour, color: objective.colour }}>
+                Objective {objective.id}: {objective.title}
+              </div>
+              {objective.principles.map((p) => (
+                <div key={p.id} style={{ marginBottom: 24 }}>
+                  <h3 className="govuk-heading-m" style={{ borderLeft: `4px solid ${objective.colour}`, paddingLeft: 10 }}>
+                    {p.id} – {p.title}
+                  </h3>
+                  <IgpDetailTable igps={p.igps} responses={responses} />
+                </div>
+              ))}
             </div>
-          ))
-        )}
+          ))}
+        </div>
+      )}
 
-      {/* Disclaimer */}
       <div className="govuk-inset-text" style={{ marginTop: 40 }}>
         <p className="govuk-body" style={{ marginBottom: 0 }}>
           This self-assessment is indicative only. It is not an official NCSC assessment and does not constitute
