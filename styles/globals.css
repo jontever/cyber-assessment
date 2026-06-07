@@ -251,4 +251,45 @@ body,
   }
 
   /* Print header in place of nav */
-  .g
+  .ga-container::before {
+    content: "Govassure - CAF v4.0 Assessment";
+    display: block;
+    font-size: 9pt;
+    color: #505a5f;
+    border-bottom: 1pt solid #b1b4b6;
+    padding-bottom: 6pt;
+    margin-bottom: 12pt;
+  }
+
+  footer { display: none !important; }
+}
+
+/* ── Utility ── */
+.ga-caption {
+  font-size: 14px;
+  color: var(--govassure-dark-grey);
+}
+
+.ga-fw-bold {
+  font-weight: 700;
+}
+
+.ga-mt-0 { margin-top: 0; }
+.ga-mb-0 { margin-bottom: 0; }
+
+.ga-tag--achieved {
+  background: var(--govassure-green);
+  color: var(--govassure-white);
+}
+.ga-tag--partially_achieved {
+  background: #f47738;
+  color: var(--govassure-white);
+}
+.ga-tag--not_achieved {
+  background: var(--govassure-red);
+  color: var(--govassure-white);
+}
+.ga-tag--not_started {
+  background: var(--govassure-mid-grey);
+  color: var(--govassure-black);
+}
