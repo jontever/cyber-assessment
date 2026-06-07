@@ -1,7 +1,18 @@
+import { useState } from "react";
 import Link from "next/link";
 import Head from "next/head";
+import { useRouter } from "next/router";
 
 export default function Layout({ children, title = "Govassure" }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
+
+  const navLinks = [
+    { href: "/", label: "Home" },
+    { href: "/assessment", label: "Assessment" },
+    { href: "/results", label: "Results" },
+  ];
+
   return (
     <>
       <Head>
@@ -16,12 +27,49 @@ export default function Layout({ children, title = "Govassure" }) {
             <span className="ga-header__logo-name">Govassure</span>
             <span className="ga-header__logo-tag">CAF v4.0 Self-Assessment</span>
           </Link>
+
+          {/* Desktop nav */}
           <nav className="ga-header__nav" aria-label="Primary navigation">
-            <Link href="/">Home</Link>
-            <Link href="/assessment">Assessment</Link>
-            <Link href="/results">Results</Link>
+            {navLinks.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                style={{ color: router.pathname === l.href ? "#ffffff" : undefined }}
+              >
+                {l.label}
+              </Link>
+            ))}
           </nav>
+
+          {/* Hamburger button (mobile only) */}
+          <button
+            className="ga-hamburger"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            <span className="ga-hamburger__line" />
+            <span className="ga-hamburger__line" />
+            <span className="ga-hamburger__line" />
+          </button>
         </div>
+
+        {/* Mobile dropdown */}
+        {menuOpen && (
+          <nav className="ga-mobile-nav" aria-label="Mobile navigation">
+            {navLinks.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="ga-mobile-nav__link"
+                onClick={() => setMenuOpen(false)}
+                aria-current={router.pathname === l.href ? "page" : undefined}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+        )}
       </header>
 
       <div className="ga-phase-banner" role="region" aria-label="Service information">
