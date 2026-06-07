@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import Layout from "../components/Layout";
-import { loadAssessment, countResponded } from "../lib/storage";
+import { loadAssessment } from "../lib/storage";
 import { CAF, ALL_IGPS, TOTAL_IGPS, SCORES } from "../data/caf";
 import { generateWordDoc } from "../lib/wordExport";
 
