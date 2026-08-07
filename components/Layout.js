@@ -23,10 +23,10 @@ export default function Layout({ children, title = "Govassure" }) {
 
       <header className="ga-header">
         <div className="ga-header__container">
-          <Link href="/" className="ga-header__logo">
-            <span className="ga-header__logo-name">Govassure</span>
+          <a href="https://www.govassure.uk/" className="ga-header__logo">
+            <span className="ga-header__logo-name">GovAssure</span>
             <span className="ga-header__logo-tag">CAF v4.0 Self-Assessment</span>
-          </Link>
+          </a>
 
           {/* Desktop nav */}
           <nav className="ga-header__nav" aria-label="Primary navigation">
@@ -39,6 +39,13 @@ export default function Layout({ children, title = "Govassure" }) {
                 {l.label}
               </Link>
             ))}
+            <a
+              href="https://www.linkedin.com/in/jonsilvester"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              LinkedIn
+            </a>
           </nav>
 
           {/* Hamburger button (mobile only) */}
@@ -68,6 +75,15 @@ export default function Layout({ children, title = "Govassure" }) {
                 {l.label}
               </Link>
             ))}
+            <a
+              href="https://www.linkedin.com/in/jonsilvester"
+              className="ga-mobile-nav__link"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMenuOpen(false)}
+            >
+              LinkedIn
+            </a>
           </nav>
         )}
       </header>
